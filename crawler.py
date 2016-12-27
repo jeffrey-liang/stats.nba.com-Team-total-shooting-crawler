@@ -220,4 +220,4 @@ columns = ['<5 FGM', '<5 FGA', '<5 FG%',
            '25-29 FGM', '25-29 FGA', '25-29 FG %']
 
 urls = generate_links(url, 1997, 2017)
-crawler(urls, 'team_shooting_totals.db', columns=columns)
+crawler(urls, 'team_shooting.db', columns=columns)
