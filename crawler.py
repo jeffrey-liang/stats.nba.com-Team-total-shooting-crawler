@@ -130,7 +130,7 @@ def crawler(urls, db_name, columns=None):
 
     for key, url in urls.items():
 
-        print('Fetching: {} Totals'.format(url))
+        print('Fetching: {} Totals'.format(key))
 
         try:
 
@@ -139,7 +139,7 @@ def crawler(urls, db_name, columns=None):
             page_source = driver.page_source
 
             print('Saving to sqlite: {}'.format(key))
-            table_name = '{} Totals'.format(key)
+            table_name = '{}_totals'.format(key)
             save_to_sqlite3(scrape_table(page_source, columns=columns),
                             db_name, table_name)
 
