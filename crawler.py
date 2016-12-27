@@ -85,7 +85,36 @@ def scrape_table(html, columns=None):
     return data
 
 
-def save_to_sqlite3(data, db_name, table_name):
+def add_two_cols(data, season):
+    '''
+    After scraping the html and acquiring the table using 'scrape_table()' 
+    method, add the season and team columns to the beginning of the table.
+
+    Parameters:
+    -----------
+    data: pandas.core.DataFrame
+        The table with the data.
+    season: str
+        The season of the table.
+
+    Returns:
+    --------
+    data: pandas.core.DataFrame
+        The updated data table.
+    '''
+
+    data['Season'] = season
+    data['Team'] = data.index
+
+    # Move the last two columns (i.e. season and team) to the beginning.
+    cols = data.columns.tolist()
+    cols = cols[-2:] + cols[:-2]
+    data = data[cols]
+
+    return data
+
+
+def save_to_sqlite3(data, db_name, table_name, season):
     '''
     Save the dataframe into Sqlite3 database.
 
@@ -103,15 +132,32 @@ def save_to_sqlite3(data, db_name, table_name):
     None
     '''
 
-    data['Team'] = data.index
-    # Add index of teams as first column
-    cols = data.columns.tolist()
-    cols = cols[-1:] + cols[:-1]
-    data = data[cols]
+    data = add_two_cols(data, season)
 
     con = sqlite3.connect(db_name)
     data.to_sql(table_name, con, index=False,
                 if_exists='replace', index_label=True)
+
+
+def fetch(url):
+    '''
+    Fetch the url, then return the page source.
+
+    Parameters:
+    -----------
+    url: str
+        The link of page to fetch.
+
+    Returns:
+    --------
+    The page source of the url.
+    '''
+    driver = webdriver.PhantomJS('/usr/local/bin/phantomjs')
+    driver.get(url)
+    page_source = driver.page_source
+    driver.close()
+
+    return page_source
 
 
 def crawler(urls, db_name, columns=None):
@@ -127,26 +173,41 @@ def crawler(urls, db_name, columns=None):
     columns: list. optional
         The columns of the to be scraped table.
     '''
+    # Store all the links that failed
+    missed_links = OrderedDict()
 
-    for key, url in urls.items():
+    for season, url in urls.items():
 
-        print('Fetching: {} Totals'.format(key))
+        print('Fetching: {} Totals'.format(season))
 
         try:
 
-            driver = webdriver.PhantomJS('/usr/local/bin/phantomjs')
-            driver.get(url)
-            page_source = driver.page_source
+            page_source = fetch(url)
 
-            print('Saving to sqlite: {}'.format(key))
-            table_name = '{}_totals'.format(key)
+            print('Saving to sqlite: {}'.format(season))
+            table_name = '{}_totals'.format(season)
             save_to_sqlite3(scrape_table(page_source, columns=columns),
-                            db_name, table_name)
-
-            driver.close()
+                            db_name, table_name, season)
 
         except Exception as e:
+            missed_links[season] = url
             print('ERROR: {} on {}'.format(e, url))
+
+    # Try to fetch error links again.
+    if missed_links:
+        for season, url in missed_links.items():
+
+            print('Fetching: {} Totals (Again)'.format(season))
+            try:
+                page_source = fetch(url)
+
+                print('Saving to sqlite: {}'.format(season))
+                table_name = '{}_totals'.format(season)
+                save_to_sqlite3(scrape_table(page_source, columns=columns),
+                                db_name, table_name, season=season)
+
+            except Exception as e:
+                print('ERROR: {} on {}.\nFailed twice.'.format(e, url))
 
 url = 'http://stats.nba.com/teams/shooting/#!?sort=5-9%20ft.%20FG%20PCT&%5C%20dir=1&Season={}&SeasonType=Regular%20Season&PerMode=Totals'
 
