@@ -74,7 +74,8 @@ def scrape_table(html, columns=None):
                 team = data.get_text()
 
             else:
-                team_stats.append(data.get_text())
+                # Convert the str values into floats
+                team_stats.append(float(data.get_text()))
 
             table_data[team] = team_stats
 
@@ -202,7 +203,7 @@ def crawler(urls, db_name, columns=None):
                 page_source = fetch(url)
 
                 print('Saving to sqlite: {}'.format(season))
-                table_name = '{}_totals'.format(season)
+                table_name = '{}'.format(season)
                 save_to_sqlite3(scrape_table(page_source, columns=columns),
                                 db_name, table_name, season=season)
 
