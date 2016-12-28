@@ -217,7 +217,7 @@ columns = ['<5 FGM', '<5 FGA', '<5 FG%',
            '10-14 FGM', '10-14 FGA', '10-14 FG%',
            '15-19 FGM', '15-19 FGA', '15-19 FG%',
            '20-24 FGM', '20-24 FGA', '20-24 FG%',
-           '25-29 FGM', '25-29 FGA', '25-29 FG %']
+           '25-29 FGM', '25-29 FGA', '25-29 FG%']
 
 urls = generate_links(url, 1997, 2017)
 crawler(urls, 'team_shooting.db', columns=columns)
